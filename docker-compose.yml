@@ -1,0 +1,43 @@
+services:
+    postfix-relay:
+        image: boky/postfix:5.2.1-alpine
+        restart: unless-stopped
+        ports:
+            - 2525:587
+        env_file:
+            # *** Provide path to the env file with the variables
+            - /share/Container-Configs/postfix-relay-compose/vars.env
+        environment:
+            # *** Provider SMTP connection settings
+            # RELAYHOST: "[smtps.example.com]:465"
+            # RELAYHOST_USERNAME: "email-address@example.com"
+            # RELAYHOST_PASSWORD: "SUPER-SECRET-PASSWORD"
+            POSTFIX_smtp_tls_wrappermode: "yes" # Required for implicit TLS (SMTPs, port 465) to the relayhost
+            # POSTFIX_smtp_tls_security_level: "encrypt"
+            POSTFIX_smtp_tls_security_level: "secure" # chain + hostname match ("verify" = chain only, no hostname check)
+            POSTFIX_smtp_tls_CAfile: "/etc/ssl/certs/ca-certificates.crt"
+            # *** Define which clients (by local-IP) are allowed to send e-mail
+            # POSTFIX_mynetworks: "127.0.0.0/8, 192.168.1.XXX/32"
+            # *** Define the allowed recipient address(es)
+            # POSTFIX_smtpd_recipient_restrictions: "check_recipient_access inline:{you@example.com=OK}, reject"
+            # *** Allow the null/empty sender domain
+            ALLOW_EMPTY_SENDER_DOMAINS: "yes"
+            # *** Limit message max size to 10 MB
+            POSTFIX_message_size_limit: "10240000"
+            # *** Add missing headers to prevent errors/rejections
+            POSTFIX_always_add_missing_headers: "yes"
+        security_opt:
+            - no-new-privileges:true
+        cap_drop: [ALL]
+        cap_add:
+            [
+                CHOWN,
+                DAC_OVERRIDE,
+                FOWNER,
+                SETUID,
+                SETGID,
+                KILL,
+                SYS_CHROOT,
+                NET_BIND_SERVICE,
+            ]
+        pids_limit: 100
